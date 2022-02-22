@@ -1,6 +1,7 @@
 package joon.security.config.security;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import joon.security.exception.LoginException;
 import joon.security.model.User;
 import joon.security.util.CookieUtil;
 import joon.security.util.JwtUtil;
@@ -31,8 +32,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        final Cookie jwtToken = cookieUtil.getCookie(request, JwtUtil.ACCESS_TOKEN_NAME);
-        final Cookie refreshJwtToken = cookieUtil.getCookie(request, JwtUtil.REFRESH_TOKEN_NAME);
+        Cookie jwtToken = cookieUtil.getCookie(request, JwtUtil.ACCESS_TOKEN_NAME);
+        Cookie refreshJwtToken = cookieUtil.getCookie(request, JwtUtil.REFRESH_TOKEN_NAME);
 
         String email = null;
         String jwt = null;
@@ -54,12 +55,9 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 }
             }
         } catch (ExpiredJwtException e) {
-            Cookie refreshToken = cookieUtil.getCookie(request, JwtUtil.REFRESH_TOKEN_NAME);
-            if (refreshToken != null) {
-                refreshJwt = refreshToken.getValue();
-            }
+            jwtToken = null;
         } catch (Exception e) {
-
+            throw new LoginException();
         }
 
         try {
@@ -83,7 +81,9 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 }
             }
         } catch (ExpiredJwtException e) {
-            System.out.println(5);
+            throw new LoginException();
+        } catch (Exception e) {
+            throw new LoginException();
         }
 
         filterChain.doFilter(request, response);
