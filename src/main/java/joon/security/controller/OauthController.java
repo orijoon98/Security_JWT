@@ -52,13 +52,17 @@ public class OauthController {
             @RequestBody GoogleLoginDTO googleLoginDTO,
             HttpServletResponse response
     ) {
-        String userInfo = oauthService.loginGoogleUser(googleLoginDTO.getIdToken());
+        User user = oauthService.loginGoogleUser(googleLoginDTO.getIdToken());
+
+        Map<String, Cookie> cookies = authService.createCookie(user);
+        response.addCookie(cookies.get(JwtUtil.ACCESS_TOKEN_NAME));
+        response.addCookie(cookies.get(JwtUtil.REFRESH_TOKEN_NAME));
 
         return ResponseEntity.status(HttpStatus.OK).body(
                 ResponseDTO.builder()
                         .status(200)
                         .message("구글 로그인 성공")
-                        .data(userInfo)
+                        .data(user)
                         .build()
         );
     }

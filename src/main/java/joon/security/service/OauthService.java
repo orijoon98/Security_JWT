@@ -3,6 +3,7 @@ package joon.security.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import joon.security.constant.Role;
+import joon.security.dto.response.GoogleUserInfoDTO;
 import joon.security.dto.response.KakaoAuthorizationDTO;
 import joon.security.dto.response.KakaoUserInfoDTO;
 import joon.security.exception.CodeException;
@@ -56,17 +57,28 @@ public class OauthService {
 
         User newUser = User.builder()
                 .email(userInfoFromKakao.getId().toString())
-                .password(passwordEncoder.encode(userInfoFromKakao.getId().toString()))
+                .password(passwordEncoder.encode(""))
                 .role(Role.ROLE_USER)
                 .build();
 
         return userRepository.save(newUser);
     }
 
-    public String loginGoogleUser(String idToken) {
-        String userInfoFromGoogle = getUserInfoByIdToken(idToken);
+    public User loginGoogleUser(String idToken) {
+        GoogleUserInfoDTO userInfoFromGoogle = getUserInfoByIdToken(idToken);
 
-        return userInfoFromGoogle;
+        Optional<User> user = userRepository.findByEmail(userInfoFromGoogle.getEmail());
+        if(user.isPresent()) {
+            return user.get();
+        }
+
+        User newUser = User.builder()
+                .email(userInfoFromGoogle.getEmail())
+                .password(passwordEncoder.encode(""))
+                .role(Role.ROLE_USER)
+                .build();
+
+        return userRepository.save(newUser);
     }
 
     private KakaoAuthorizationDTO getKakaoAuthorization(String code) {
@@ -117,7 +129,7 @@ public class OauthService {
         }
     }
 
-    public String getUserInfoByIdToken(String idToken) {
+    public GoogleUserInfoDTO getUserInfoByIdToken(String idToken) {
         final String tokenInfoUri = "https://oauth2.googleapis.com/tokeninfo";
 
         HttpHeaders headers = new HttpHeaders();
@@ -130,13 +142,10 @@ public class OauthService {
 
         try {
             ResponseEntity<String> response = restTemplate.postForEntity(tokenInfoUri, request, String.class);
+            GoogleUserInfoDTO userInfoDto = objectMapper.readValue(response.getBody(), GoogleUserInfoDTO.class);
 
-//            GoogleUserInfoDto userInfoDto = objectMapper.readValue(response.getBody(), GoogleUserInfoDto.class);
-
-//            return userInfoDto;
-            return response.getBody();
-        } catch (RestClientException ex) {
-//        } catch (RestClientException | JsonProcessingException ex) {
+            return userInfoDto;
+        } catch (RestClientException | JsonProcessingException ex) {
 
             throw new IdTokenException();
         }
