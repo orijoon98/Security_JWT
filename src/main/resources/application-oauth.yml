@@ -1,0 +1,5 @@
+kakao:
+  authorization-grant-type: authorization_code
+  client-id: 2f844ca4bfbccc7d10f6b8cedcfa734e
+  redirect-uri: http://localhost:3000/oauth/kakao
+  client-secret: zkUHYOr4WCNivYZnlJODiCpRwuzDZw15
