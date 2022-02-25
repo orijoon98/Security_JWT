@@ -168,7 +168,7 @@ public class OauthService {
     }
 
     public NaverUserInfoDTO getNaverUserInfoByAccessToken(String token) {
-        final String kakaoUserInfoUri = "https://openapi.naver.com/v1/nid/me";
+        final String naverUserInfoUri = "https://openapi.naver.com/v1/nid/me";
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
@@ -178,7 +178,7 @@ public class OauthService {
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
 
         try {
-            ResponseEntity<String> response = restTemplate.postForEntity(kakaoUserInfoUri, request, String.class);
+            ResponseEntity<String> response = restTemplate.postForEntity(naverUserInfoUri, request, String.class);
             NaverUserInfoDTO userInfoDto = objectMapper.readValue(response.getBody(), NaverUserInfoDTO.class);
 
             return userInfoDto;
