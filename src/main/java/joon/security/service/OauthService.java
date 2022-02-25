@@ -3,9 +3,7 @@ package joon.security.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import joon.security.constant.Role;
-import joon.security.dto.response.GoogleUserInfoDTO;
-import joon.security.dto.response.KakaoAuthorizationDTO;
-import joon.security.dto.response.KakaoUserInfoDTO;
+import joon.security.dto.response.*;
 import joon.security.exception.CodeException;
 import joon.security.exception.IdTokenException;
 import joon.security.model.User;
@@ -81,6 +79,24 @@ public class OauthService {
         return userRepository.save(newUser);
     }
 
+    public User loginNaverUser(String token) {
+        NaverUserInfoDTO userInfoFromNaver = getNaverUserInfoByAccessToken(token);
+        NaverSpecificUserInfoDTO specificUserInfoFromNaver = userInfoFromNaver.getResponse();
+
+        Optional<User> user = userRepository.findByEmail(specificUserInfoFromNaver.getEmail());
+        if(user.isPresent()) {
+            return user.get();
+        }
+
+        User newUser = User.builder()
+                .email(specificUserInfoFromNaver.getEmail())
+                .password(passwordEncoder.encode(""))
+                .role(Role.ROLE_USER)
+                .build();
+
+        return userRepository.save(newUser);
+    }
+
     private KakaoAuthorizationDTO getKakaoAuthorization(String code) {
         final String kakaoTokenUri = "https://kauth.kakao.com/oauth/token";
 
@@ -148,6 +164,27 @@ public class OauthService {
         } catch (RestClientException | JsonProcessingException ex) {
 
             throw new IdTokenException();
+        }
+    }
+
+    public NaverUserInfoDTO getNaverUserInfoByAccessToken(String token) {
+        final String kakaoUserInfoUri = "https://openapi.naver.com/v1/nid/me";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + token);
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(kakaoUserInfoUri, request, String.class);
+            NaverUserInfoDTO userInfoDto = objectMapper.readValue(response.getBody(), NaverUserInfoDTO.class);
+
+            return userInfoDto;
+        } catch (RestClientException | JsonProcessingException ex) {
+
+            throw new CodeException();
         }
     }
 }

@@ -3,6 +3,7 @@ package joon.security.controller;
 import joon.security.dto.ResponseDTO;
 import joon.security.dto.request.GoogleLoginDTO;
 import joon.security.dto.request.KakaoLoginDTO;
+import joon.security.dto.request.NaverLoginDTO;
 import joon.security.model.User;
 import joon.security.service.AuthService;
 import joon.security.service.OauthService;
@@ -62,6 +63,26 @@ public class OauthController {
                 ResponseDTO.builder()
                         .status(200)
                         .message("구글 로그인 성공")
+                        .data(user)
+                        .build()
+        );
+    }
+
+    @PostMapping("/naver")
+    public ResponseEntity<ResponseDTO> loginNaverUser(
+            @RequestBody NaverLoginDTO naverLoginDTO,
+            HttpServletResponse response
+    ) {
+        User user = oauthService.loginNaverUser(naverLoginDTO.getToken());
+
+        Map<String, Cookie> cookies = authService.createCookie(user);
+        response.addCookie(cookies.get(JwtUtil.ACCESS_TOKEN_NAME));
+        response.addCookie(cookies.get(JwtUtil.REFRESH_TOKEN_NAME));
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ResponseDTO.builder()
+                        .status(200)
+                        .message("네이버 로그인 성공")
                         .data(user)
                         .build()
         );
